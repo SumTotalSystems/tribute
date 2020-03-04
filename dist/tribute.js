@@ -232,6 +232,7 @@ function () {
           ul = this.range.getDocument().createElement('ul');
       wrapper.className = containerClass;
       wrapper.appendChild(ul);
+      wrapper.setAttribute('data-cke-hidden-sel', '');
 
       if (this.menuContainer) {
         return this.menuContainer.appendChild(wrapper);
@@ -421,7 +422,9 @@ function () {
     key: "hideMenu",
     value: function hideMenu() {
       if (this.menu) {
-        this.menu.style.cssText = 'display: none;';
+        this.menuEvents.unbind(this.menu);
+        this.menu.remove();
+        this.menu = null;
         this.isActive = false;
         this.menuSelected = 0;
         this.current = {};
@@ -1030,7 +1033,7 @@ function () {
         return document;
       }
 
-      return iframe.contentWindow.document;
+      if (iframe.contentWindow) return iframe.contentWindow.document;else return iframe.document;
     }
   }, {
     key: "positionMenuAtCaret",
@@ -1065,20 +1068,22 @@ function () {
 
         if (scrollTo) this.scrollIntoView();
         window.setTimeout(function () {
-          var menuDimensions = {
-            width: _this.tribute.menu.offsetWidth,
-            height: _this.tribute.menu.offsetHeight
-          };
+          if (_this.tribute.menu) {
+            var menuDimensions = {
+              width: _this.tribute.menu.offsetWidth,
+              height: _this.tribute.menu.offsetHeight
+            };
 
-          var menuIsOffScreen = _this.isMenuOffScreen(coordinates, menuDimensions);
+            var menuIsOffScreen = _this.isMenuOffScreen(coordinates, menuDimensions, _this.tribute.current.collection.iframe);
 
-          var menuIsOffScreenHorizontally = window.innerWidth > menuDimensions.width && (menuIsOffScreen.left || menuIsOffScreen.right);
-          var menuIsOffScreenVertically = window.innerHeight > menuDimensions.height && (menuIsOffScreen.top || menuIsOffScreen.bottom);
+            var menuIsOffScreenHorizontally = window.innerWidth > menuDimensions.width && (menuIsOffScreen.left || menuIsOffScreen.right);
+            var menuIsOffScreenVertically = window.innerHeight > menuDimensions.height && (menuIsOffScreen.top || menuIsOffScreen.bottom);
 
-          if (menuIsOffScreenHorizontally || menuIsOffScreenVertically) {
-            _this.tribute.menu.style.cssText = 'display: none';
+            if (menuIsOffScreenHorizontally || menuIsOffScreenVertically) {
+              _this.tribute.menu.style.cssText = 'display: none';
 
-            _this.positionMenuAtCaret(scrollTo);
+              _this.positionMenuAtCaret(scrollTo);
+            }
           }
         }, 0);
       } else {
@@ -1206,8 +1211,8 @@ function () {
   }, {
     key: "getWindowSelection",
     value: function getWindowSelection() {
-      if (this.tribute.collection.iframe) {
-        return this.tribute.collection.iframe.contentWindow.getSelection();
+      if (this.tribute.collection[0].iframe) {
+        if (this.tribute.collection[0].iframe.contentWindow) return this.tribute.collection[0].iframe.contentWindow.getSelection();else return this.tribute.collection[0].iframe.getSelection();
       }
 
       return window.getSelection();
@@ -1405,12 +1410,13 @@ function () {
     }
   }, {
     key: "isMenuOffScreen",
-    value: function isMenuOffScreen(coordinates, menuDimensions) {
-      var windowWidth = window.innerWidth;
-      var windowHeight = window.innerHeight;
-      var doc = document.documentElement;
-      var windowLeft = (window.pageXOffset || doc.scrollLeft) - (doc.clientLeft || 0);
-      var windowTop = (window.pageYOffset || doc.scrollTop) - (doc.clientTop || 0);
+    value: function isMenuOffScreen(coordinates, menuDimensions, iframe) {
+      var wnd = iframe || window;
+      var windowWidth = wnd.innerWidth;
+      var windowHeight = wnd.innerHeight;
+      var doc = wnd.document.documentElement;
+      var windowLeft = (wnd.pageXOffset || doc.scrollLeft) - (doc.clientLeft || 0);
+      var windowTop = (wnd.pageYOffset || doc.scrollTop) - (doc.clientTop || 0);
       var menuTop = typeof coordinates.top === 'number' ? coordinates.top : windowTop + windowHeight - coordinates.bottom - menuDimensions.height;
       var menuRight = typeof coordinates.right === 'number' ? coordinates.right : coordinates.left + menuDimensions.width;
       var menuBottom = typeof coordinates.bottom === 'number' ? coordinates.bottom : coordinates.top + menuDimensions.height;
@@ -1538,19 +1544,20 @@ function () {
       range.setEnd(sel.anchorNode, selectedNodePosition);
       range.collapse(false);
       var rect = range.getBoundingClientRect();
-      var doc = document.documentElement;
-      var windowLeft = (window.pageXOffset || doc.scrollLeft) - (doc.clientLeft || 0);
-      var windowTop = (window.pageYOffset || doc.scrollTop) - (doc.clientTop || 0);
+      var doc = this.getDocument().documentElement;
+      var wnd = this.tribute.current.collection.iframe || window;
+      var windowLeft = (wnd.pageXOffset || doc.scrollLeft) - (doc.clientLeft || 0);
+      var windowTop = (wnd.pageYOffset || doc.scrollTop) - (doc.clientTop || 0);
       var left = rect.left;
       var top = rect.top;
       var coordinates = {
         left: left + windowLeft,
         top: top + rect.height + windowTop
       };
-      var windowWidth = window.innerWidth;
-      var windowHeight = window.innerHeight;
+      var windowWidth = wnd.innerWidth;
+      var windowHeight = wnd.innerHeight;
       var menuDimensions = this.getMenuDimensions();
-      var menuIsOffScreen = this.isMenuOffScreen(coordinates, menuDimensions);
+      var menuIsOffScreen = this.isMenuOffScreen(coordinates, menuDimensions, wnd);
 
       if (menuIsOffScreen.right) {
         coordinates.left = 'auto';
@@ -1558,6 +1565,7 @@ function () {
       }
 
       var parentHeight = this.tribute.menuContainer ? this.tribute.menuContainer.offsetHeight : this.getDocument().body.offsetHeight;
+      var wasOffscreenBottom = menuIsOffScreen.bottom;
 
       if (menuIsOffScreen.bottom) {
         var parentRect = this.tribute.menuContainer ? this.tribute.menuContainer.getBoundingClientRect() : this.getDocument().body.getBoundingClientRect();
@@ -1566,7 +1574,7 @@ function () {
         coordinates.bottom = scrollStillAvailable + (windowHeight - rect.top);
       }
 
-      menuIsOffScreen = this.isMenuOffScreen(coordinates, menuDimensions);
+      menuIsOffScreen = this.isMenuOffScreen(coordinates, menuDimensions, wnd);
 
       if (menuIsOffScreen.left) {
         coordinates.left = windowWidth > menuDimensions.width ? windowLeft + windowWidth - menuDimensions.width : windowLeft;
@@ -1575,7 +1583,7 @@ function () {
 
       if (menuIsOffScreen.top) {
         coordinates.top = windowHeight > menuDimensions.height ? windowTop + windowHeight - menuDimensions.height : windowTop;
-        delete coordinates.bottom;
+        if (!wasOffscreenBottom) delete coordinates.bottom;
       }
 
       if (!this.menuContainerIsBody) {
@@ -1591,7 +1599,7 @@ function () {
       var reasonableBuffer = 20,
           clientRect;
       var maxScrollDisplacement = 100;
-      var e = this.menu;
+      var e = this.menu ? this.menu : this.tribute ? this.tribute.menu : null;
       if (typeof e === 'undefined') return;
 
       while (clientRect === undefined || clientRect.height === 0) {

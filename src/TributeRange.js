@@ -17,7 +17,10 @@ class TributeRange {
             return document
         }
 
-        return iframe.contentWindow.document
+        if (iframe.contentWindow)
+			return iframe.contentWindow.document
+		else
+			return iframe.document
     }
 
     positionMenuAtCaret(scrollTo) {
@@ -59,18 +62,20 @@ class TributeRange {
             if (scrollTo) this.scrollIntoView()
 
             window.setTimeout(() => {
-                let menuDimensions = {
-                   width: this.tribute.menu.offsetWidth,
-                   height: this.tribute.menu.offsetHeight
-                }
-                let menuIsOffScreen = this.isMenuOffScreen(coordinates, menuDimensions)
+				if (this.tribute.menu) {
+					let menuDimensions = {
+					   width: this.tribute.menu.offsetWidth,
+					   height: this.tribute.menu.offsetHeight
+					}
+					let menuIsOffScreen = this.isMenuOffScreen(coordinates, menuDimensions, this.tribute.current.collection.iframe)
 
-                let menuIsOffScreenHorizontally = window.innerWidth > menuDimensions.width && (menuIsOffScreen.left || menuIsOffScreen.right)
-                let menuIsOffScreenVertically = window.innerHeight > menuDimensions.height && (menuIsOffScreen.top || menuIsOffScreen.bottom)
-                if (menuIsOffScreenHorizontally || menuIsOffScreenVertically) {
-                    this.tribute.menu.style.cssText = 'display: none'
-                    this.positionMenuAtCaret(scrollTo)
-                }
+					let menuIsOffScreenHorizontally = window.innerWidth > menuDimensions.width && (menuIsOffScreen.left || menuIsOffScreen.right)
+					let menuIsOffScreenVertically = window.innerHeight > menuDimensions.height && (menuIsOffScreen.top || menuIsOffScreen.bottom)
+					if (menuIsOffScreenHorizontally || menuIsOffScreenVertically) {
+						this.tribute.menu.style.cssText = 'display: none'
+						this.positionMenuAtCaret(scrollTo)
+					}
+				}
             }, 0)
 
         } else {
@@ -158,7 +163,7 @@ class TributeRange {
                 }
                 this.pasteHtml(text, info.mentionPosition, endPos)
             }
-
+            
             context.element.dispatchEvent(new CustomEvent('input', { bubbles: true }))
             context.element.dispatchEvent(replaceEvent)
         }
@@ -192,8 +197,11 @@ class TributeRange {
     }
 
     getWindowSelection() {
-        if (this.tribute.collection.iframe) {
-            return this.tribute.collection.iframe.contentWindow.getSelection()
+        if (this.tribute.collection[0].iframe) {
+			if (this.tribute.collection[0].iframe.contentWindow)
+				return this.tribute.collection[0].iframe.contentWindow.getSelection()
+			else
+				return this.tribute.collection[0].iframe.getSelection()
         }
 
         return window.getSelection()
@@ -397,12 +405,13 @@ class TributeRange {
         return element.nodeName !== 'INPUT' && element.nodeName !== 'TEXTAREA'
     }
 
-    isMenuOffScreen(coordinates, menuDimensions) {
-        let windowWidth = window.innerWidth
-        let windowHeight = window.innerHeight
-        let doc = document.documentElement
-        let windowLeft = (window.pageXOffset || doc.scrollLeft) - (doc.clientLeft || 0)
-        let windowTop = (window.pageYOffset || doc.scrollTop) - (doc.clientTop || 0)
+    isMenuOffScreen(coordinates, menuDimensions, iframe) {
+        let wnd = iframe || window
+		let windowWidth = wnd.innerWidth
+        let windowHeight = wnd.innerHeight
+        let doc = wnd.document.documentElement
+        let windowLeft = (wnd.pageXOffset || doc.scrollLeft) - (doc.clientLeft || 0)
+        let windowTop = (wnd.pageYOffset || doc.scrollTop) - (doc.clientTop || 0)
 
         let menuTop = typeof coordinates.top === 'number' ? coordinates.top : windowTop + windowHeight - coordinates.bottom - menuDimensions.height
         let menuRight = typeof coordinates.right === 'number' ? coordinates.right : coordinates.left + menuDimensions.width
@@ -562,9 +571,10 @@ class TributeRange {
         range.collapse(false)
 
         let rect = range.getBoundingClientRect()
-        let doc = document.documentElement
-        let windowLeft = (window.pageXOffset || doc.scrollLeft) - (doc.clientLeft || 0)
-        let windowTop = (window.pageYOffset || doc.scrollTop) - (doc.clientTop || 0)
+		let doc = this.getDocument().documentElement
+		let wnd = this.tribute.current.collection.iframe || window
+		let windowLeft = (wnd.pageXOffset || doc.scrollLeft) - (doc.clientLeft || 0)
+		let windowTop = (wnd.pageYOffset || doc.scrollTop) - (doc.clientTop || 0)
 
         let left = rect.left
         let top = rect.top
@@ -573,11 +583,11 @@ class TributeRange {
             left: left + windowLeft,
             top: top + rect.height + windowTop
         }
-        let windowWidth = window.innerWidth
-        let windowHeight = window.innerHeight
+        let windowWidth = wnd.innerWidth
+        let windowHeight = wnd.innerHeight
 
         let menuDimensions = this.getMenuDimensions()
-        let menuIsOffScreen = this.isMenuOffScreen(coordinates, menuDimensions)
+        let menuIsOffScreen = this.isMenuOffScreen(coordinates, menuDimensions, wnd)
 
         if (menuIsOffScreen.right) {
             coordinates.left = 'auto'
@@ -588,7 +598,8 @@ class TributeRange {
             ? this.tribute.menuContainer.offsetHeight
             : this.getDocument().body.offsetHeight
 
-        if (menuIsOffScreen.bottom) {
+        let wasOffscreenBottom = menuIsOffScreen.bottom
+		if (menuIsOffScreen.bottom) {
             let parentRect = this.tribute.menuContainer
                 ? this.tribute.menuContainer.getBoundingClientRect()
                 : this.getDocument().body.getBoundingClientRect()
@@ -598,7 +609,7 @@ class TributeRange {
             coordinates.bottom = scrollStillAvailable + (windowHeight - rect.top)
         }
 
-        menuIsOffScreen = this.isMenuOffScreen(coordinates, menuDimensions)
+        menuIsOffScreen = this.isMenuOffScreen(coordinates, menuDimensions, wnd)
         if (menuIsOffScreen.left) {
             coordinates.left = windowWidth > menuDimensions.width
                 ? windowLeft + windowWidth - menuDimensions.width
@@ -609,7 +620,8 @@ class TributeRange {
             coordinates.top = windowHeight > menuDimensions.height
                 ? windowTop + windowHeight - menuDimensions.height
                 : windowTop
-            delete coordinates.bottom
+            if (!wasOffscreenBottom)
+				delete coordinates.bottom
         }
 
         if (!this.menuContainerIsBody) {
@@ -624,7 +636,7 @@ class TributeRange {
         let reasonableBuffer = 20,
             clientRect
         let maxScrollDisplacement = 100
-        let e = this.menu
+        let e = this.menu ? this.menu : (this.tribute ? this.tribute.menu : null)
 
         if (typeof e === 'undefined') return;
 

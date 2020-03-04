@@ -201,7 +201,8 @@ class Tribute {
             ul = this.range.getDocument().createElement('ul')
         wrapper.className = containerClass
         wrapper.appendChild(ul)
-
+		wrapper.setAttribute('data-cke-hidden-sel','')
+		
         if (this.menuContainer) {
             return this.menuContainer.appendChild(wrapper)
         }
@@ -378,7 +379,9 @@ class Tribute {
 
     hideMenu() {
         if (this.menu) {
-            this.menu.style.cssText = 'display: none;'
+			this.menuEvents.unbind(this.menu)
+			this.menu.remove()
+			this.menu = null	
             this.isActive = false
             this.menuSelected = 0
             this.current = {}

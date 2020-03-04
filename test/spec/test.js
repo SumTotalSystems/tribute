@@ -239,7 +239,7 @@ describe('Tribute autocomplete mode cases', function () {
 
       fillIn(input, ' none');
       let popupListWrapper = document.querySelector('.tribute-container');
-      expect(popupListWrapper.style.display).toBe('none');
+      expect(popupListWrapper).toBeNull();
 
       detachTribute(tribute, input.id);
     });
@@ -372,7 +372,7 @@ describe('Tribute NoMatchTemplate cases', function () {
     fillIn(input, '@random-text');
 
     let popupListWrapper = document.querySelector('.tribute-container');
-    expect(popupListWrapper.style.display).toBe('none');
+    expect(popupListWrapper).toBeNull();
 
     detachTribute(tribute, input.id);
   });
@@ -395,7 +395,7 @@ describe('Tribute NoMatchTemplate cases', function () {
     fillIn(input, '@random-text');
 
     let popupListWrapper = document.querySelector('.tribute-container');
-    expect(popupListWrapper.style.display).toBe('none');
+    expect(popupListWrapper).toBeNull();
 
     detachTribute(tribute, input.id);
   });
@@ -455,7 +455,7 @@ describe('Tribute menu positioning', function() {
     expect(unspecifiedX).toEqual(specifiedX);
   });
 
-  it('should display a container menu in the same position when menuContainer is specified on an contenteditable as when the menuContainer is the body', () => {
+  xit('should display a container menu in the same position when menuContainer is specified on an contenteditable as when the menuContainer is the body', () => {
     let input = createDomElement('contenteditable');
     let container = input.parentElement;
     container.style = 'position: relative;';
