@@ -27,6 +27,7 @@ class Tribute {
         spaceSelectsMatch = false,
         searchOpts = {},
         menuItemLimit = null,
+        menuLabel = ''
     }) {
         this.autocompleteMode = autocompleteMode
         this.menuSelected = 0
@@ -91,6 +92,8 @@ class Tribute {
                 searchOpts: searchOpts,
 
                 menuItemLimit: menuItemLimit,
+
+                menuLabel: menuLabel
             }]
         }
         else if (collection) {
@@ -119,6 +122,7 @@ class Tribute {
                     requireLeadingSpace: item.requireLeadingSpace,
                     searchOpts: item.searchOpts || searchOpts,
                     menuItemLimit: item.menuItemLimit || menuItemLimit,
+                    menuLabel: item.menuLabel || menuLabel
                 }
             })
         }
@@ -184,6 +188,8 @@ class Tribute {
         this.ensureEditable(el)
         this.events.bind(el)
         el.setAttribute('data-tribute', true)
+        el.setAttribute('aria-autocomplete', this.autocompleteMode ? 'inline' : 'list')
+        el.setAttribute('aria-owns', 'tributeResults')
     }
 
     ensureEditable(element) {
@@ -201,8 +207,16 @@ class Tribute {
             ul = this.range.getDocument().createElement('ul')
         wrapper.className = containerClass
         wrapper.appendChild(ul)
-		wrapper.setAttribute('data-cke-hidden-sel','')
-		
+        wrapper.setAttribute('data-cke-hidden-sel','')
+        wrapper.setAttribute('contenteditable','false')
+        wrapper.style.display = 'none'
+        ul.setAttribute('role','listbox')
+        if (this.current.collection.menuLabel)
+            ul.setAttribute('aria-label', this.current.collection.menuLabel)
+        ul.setAttribute('aria-activedescendant','')
+
+        ul.id = 'tributeResults'
+
         if (this.menuContainer) {
             return this.menuContainer.appendChild(wrapper)
         }
@@ -281,6 +295,8 @@ class Tribute {
             items.forEach((item, index) => {
                 let li = this.range.getDocument().createElement('li')
                 li.setAttribute('data-index', index)
+                li.setAttribute('role','option')
+                li.id = 'tributeitem' + index
                 li.className = this.current.collection.itemClass
                 li.addEventListener('mousemove', (e) => {
                     let [li, index] = this._findLiTarget(e.target)
@@ -288,13 +304,16 @@ class Tribute {
                         this.events.setActiveLi(index)
                     }
                 })
-                if (this.menuSelected === index) {
-                  li.classList.add(this.current.collection.selectClass)
-                }
+
                 li.innerHTML = this.current.collection.menuItemTemplate(item)
                 fragment.appendChild(li)
             })
             ul.appendChild(fragment)
+
+            this.events.setActiveLi(this.menuSelected)
+
+            let matchEvent = new CustomEvent('tribute-match', { detail: this.menu })
+            this.current.element.dispatchEvent(matchEvent)
         }
 
         if (typeof this.current.collection.values === 'function') {
@@ -379,9 +398,10 @@ class Tribute {
 
     hideMenu() {
         if (this.menu) {
-			this.menuEvents.unbind(this.menu)
-			this.menu.remove()
-			this.menu = null	
+            this.menuEvents.unbind(this.menu)
+            if (this.menu.parentNode)
+                this.menu.parentNode.removeChild(this.menu)
+            this.menu = null
             this.isActive = false
             this.menuSelected = 0
             this.current = {}
@@ -457,8 +477,8 @@ class Tribute {
         setTimeout(() => {
             el.removeAttribute('data-tribute')
             this.isActive = false
-            if (el.tributeMenu) {
-                el.tributeMenu.remove()
+            if (el.tributeMenu && el.tributeMenu.parentNode) {
+                el.tributeMenu.parentNode.removeChild(el.tributeMenu)
             }
         })
     }

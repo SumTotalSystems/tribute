@@ -41,7 +41,7 @@ class TributeRange {
                     info.mentionPosition)
             }
             else {
-                coordinates = this.getContentEditableCaretPosition(info.mentionPosition)
+                coordinates = this.getContentEditableCaretPosition(info)
             }
 
             this.tribute.menu.style.cssText = `top: ${coordinates.top}px;
@@ -49,7 +49,8 @@ class TributeRange {
                                      right: ${coordinates.right}px;
                                      bottom: ${coordinates.bottom}px;
                                      position: absolute;
-                                     display: block;`
+                                     display: block;
+									 height: ${coordinates.height}px;`
 
             if (coordinates.left === 'auto') {
                 this.tribute.menu.style.left = 'auto'
@@ -187,12 +188,12 @@ class TributeRange {
         range.insertNode(frag)
 
         // Preserve the selection
-        if (lastNode) {
-            range = range.cloneRange()
-            range.setStartAfter(lastNode)
-            range.collapse(true)
-            sel.removeAllRanges()
-            sel.addRange(range)
+		if (lastNode) {
+			range = range.cloneRange()
+			range.setStartAfter(lastNode)
+			range.collapse(true)
+			sel.removeAllRanges()
+			sel.addRange(range)
         }
     }
 
@@ -269,11 +270,22 @@ class TributeRange {
 
             if (selectedElem != null) {
                 let workingNodeContent = selectedElem.textContent
-                let selectStartOffset = this.getWindowSelection().getRangeAt(0).startOffset
+                let startContainer = this.getWindowSelection().getRangeAt(0).startContainer
+				let selectStartOffset = this.getWindowSelection().getRangeAt(0).startOffset
+				if (startContainer.nodeType == 3) {
+					if (workingNodeContent && selectStartOffset >= 0) {
+						text = workingNodeContent.substring(0, selectStartOffset)
+					}
+				}
+				else if (startContainer.nodeType == 1 && workingNodeContent) {
+					//cursor is not in a text node, so rebuild the appropriate text value
+					workingNodeContent = ''
+					for (var x=0; x<selectStartOffset; x++) {
+						workingNodeContent += startContainer.childNodes[x].textContent
+					}
 
-                if (workingNodeContent && selectStartOffset >= 0) {
-                    text = workingNodeContent.substring(0, selectStartOffset)
-                }
+					text = workingNodeContent
+				}
             }
         }
 
@@ -560,13 +572,13 @@ class TributeRange {
         return coordinates
     }
 
-    getContentEditableCaretPosition(selectedNodePosition) {
+    getContentEditableCaretPosition(info) {
         let range
         let sel = this.getWindowSelection()
 
         range = this.getDocument().createRange()
-        range.setStart(sel.anchorNode, selectedNodePosition)
-        range.setEnd(sel.anchorNode, selectedNodePosition)
+        range.setStart(sel.anchorNode, sel.anchorNode.nodeType == 3 ? info.mentionPosition : info.mentionSelectedOffset)
+        range.setEnd(sel.anchorNode, sel.anchorNode.nodeType == 3 ? info.mentionPosition : info.mentionSelectedOffset)
 
         range.collapse(false)
 
@@ -596,9 +608,10 @@ class TributeRange {
 
         let parentHeight = this.tribute.menuContainer
             ? this.tribute.menuContainer.offsetHeight
-            : this.getDocument().body.offsetHeight
+            : (this.tribute.current.collection.iframe ? windowHeight : this.getDocument().body.offsetHeight)
 
         let wasOffscreenBottom = menuIsOffScreen.bottom
+		
 		if (menuIsOffScreen.bottom) {
             let parentRect = this.tribute.menuContainer
                 ? this.tribute.menuContainer.getBoundingClientRect()
@@ -606,7 +619,7 @@ class TributeRange {
             let scrollStillAvailable = parentHeight - (windowHeight - parentRect.top)
 
             coordinates.top = 'auto'
-            coordinates.bottom = scrollStillAvailable + (windowHeight - rect.top)
+            coordinates.bottom = scrollStillAvailable + (windowHeight - rect.top - parentRect.top)
         }
 
         menuIsOffScreen = this.isMenuOffScreen(coordinates, menuDimensions, wnd)
@@ -617,7 +630,7 @@ class TributeRange {
             delete coordinates.right
         }
         if (menuIsOffScreen.top) {
-            coordinates.top = windowHeight > menuDimensions.height
+            coordinates.top = (windowHeight > menuDimensions.height && !wasOffscreenBottom)
                 ? windowTop + windowHeight - menuDimensions.height
                 : windowTop
             if (!wasOffscreenBottom)

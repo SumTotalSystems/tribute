@@ -134,7 +134,7 @@ class TributeEvents {
 
         if ((instance.tribute.current.trigger || instance.tribute.autocompleteMode)
             && instance.commandEvent === false
-            || instance.tribute.isActive && event.keyCode === 8) {
+            || instance.tribute.current.trigger && event.keyCode === 8) {
           instance.tribute.showMenuFor(this, true)
         }
     }
@@ -151,7 +151,10 @@ class TributeEvents {
             return !eventKeyPressed
         }
 
-        return false
+        if (event.keyCode === 35 || event.keyCode === 36) 
+            return true
+        else
+            return false
     }
 
     getKeyCode(instance, el, event) {
@@ -294,8 +297,12 @@ class TributeEvents {
                     this.tribute.menu.scrollTop -= scrollDistance
                 }
 
+                li.setAttribute('aria-selected', 'true')
+                this.tribute.current.element.setAttribute('aria-activedescendant', li.id)
+
             } else {
                 li.classList.remove(this.tribute.current.collection.selectClass);
+                li.setAttribute('aria-selected', 'false')
             }
         }
     }

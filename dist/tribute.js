@@ -79,7 +79,9 @@ function () {
         _ref$searchOpts = _ref.searchOpts,
         searchOpts = _ref$searchOpts === void 0 ? {} : _ref$searchOpts,
         _ref$menuItemLimit = _ref.menuItemLimit,
-        menuItemLimit = _ref$menuItemLimit === void 0 ? null : _ref$menuItemLimit;
+        menuItemLimit = _ref$menuItemLimit === void 0 ? null : _ref$menuItemLimit,
+        _ref$menuLabel = _ref.menuLabel,
+        menuLabel = _ref$menuLabel === void 0 ? '' : _ref$menuLabel;
 
     _classCallCheck(this, Tribute);
 
@@ -134,7 +136,8 @@ function () {
         values: values,
         requireLeadingSpace: requireLeadingSpace,
         searchOpts: searchOpts,
-        menuItemLimit: menuItemLimit
+        menuItemLimit: menuItemLimit,
+        menuLabel: menuLabel
       }];
     } else if (collection) {
       if (this.autocompleteMode) console.warn('Tribute in autocomplete mode does not work for collections');
@@ -160,7 +163,8 @@ function () {
           values: item.values,
           requireLeadingSpace: item.requireLeadingSpace,
           searchOpts: item.searchOpts || searchOpts,
-          menuItemLimit: item.menuItemLimit || menuItemLimit
+          menuItemLimit: item.menuItemLimit || menuItemLimit,
+          menuLabel: item.menuLabel || menuLabel
         };
       });
     } else {
@@ -213,6 +217,8 @@ function () {
       this.ensureEditable(el);
       this.events.bind(el);
       el.setAttribute('data-tribute', true);
+      el.setAttribute('aria-autocomplete', this.autocompleteMode ? 'inline' : 'list');
+      el.setAttribute('aria-owns', 'tributeResults');
     }
   }, {
     key: "ensureEditable",
@@ -233,6 +239,12 @@ function () {
       wrapper.className = containerClass;
       wrapper.appendChild(ul);
       wrapper.setAttribute('data-cke-hidden-sel', '');
+      wrapper.setAttribute('contenteditable', 'false');
+      wrapper.style.display = 'none';
+      ul.setAttribute('role', 'listbox');
+      if (this.current.collection.menuLabel) ul.setAttribute('aria-label', this.current.collection.menuLabel);
+      ul.setAttribute('aria-activedescendant', '');
+      ul.id = 'tributeResults';
 
       if (this.menuContainer) {
         return this.menuContainer.appendChild(wrapper);
@@ -320,6 +332,8 @@ function () {
           var li = _this2.range.getDocument().createElement('li');
 
           li.setAttribute('data-index', index);
+          li.setAttribute('role', 'option');
+          li.id = 'tributeitem' + index;
           li.className = _this2.current.collection.itemClass;
           li.addEventListener('mousemove', function (e) {
             var _this2$_findLiTarget = _this2._findLiTarget(e.target),
@@ -331,15 +345,18 @@ function () {
               _this2.events.setActiveLi(index);
             }
           });
-
-          if (_this2.menuSelected === index) {
-            li.classList.add(_this2.current.collection.selectClass);
-          }
-
           li.innerHTML = _this2.current.collection.menuItemTemplate(item);
           fragment.appendChild(li);
         });
         ul.appendChild(fragment);
+
+        _this2.events.setActiveLi(_this2.menuSelected);
+
+        var matchEvent = new CustomEvent('tribute-match', {
+          detail: _this2.menu
+        });
+
+        _this2.current.element.dispatchEvent(matchEvent);
       };
 
       if (typeof this.current.collection.values === 'function') {
@@ -423,7 +440,7 @@ function () {
     value: function hideMenu() {
       if (this.menu) {
         this.menuEvents.unbind(this.menu);
-        this.menu.remove();
+        if (this.menu.parentNode) this.menu.parentNode.removeChild(this.menu);
         this.menu = null;
         this.isActive = false;
         this.menuSelected = 0;
@@ -511,8 +528,8 @@ function () {
         el.removeAttribute('data-tribute');
         _this3.isActive = false;
 
-        if (el.tributeMenu) {
-          el.tributeMenu.remove();
+        if (el.tributeMenu && el.tributeMenu.parentNode) {
+          el.tributeMenu.parentNode.removeChild(el.tributeMenu);
         }
       });
     }
@@ -673,7 +690,7 @@ function () {
         }
       }
 
-      if ((instance.tribute.current.trigger || instance.tribute.autocompleteMode) && instance.commandEvent === false || instance.tribute.isActive && event.keyCode === 8) {
+      if ((instance.tribute.current.trigger || instance.tribute.autocompleteMode) && instance.commandEvent === false || instance.tribute.current.trigger && event.keyCode === 8) {
         instance.tribute.showMenuFor(this, true);
       }
     }
@@ -690,7 +707,7 @@ function () {
         return !eventKeyPressed;
       }
 
-      return false;
+      if (event.keyCode === 35 || event.keyCode === 36) return true;else return false;
     }
   }, {
     key: "getKeyCode",
@@ -846,8 +863,12 @@ function () {
 
             this.tribute.menu.scrollTop -= _scrollDistance;
           }
+
+          li.setAttribute('aria-selected', 'true');
+          this.tribute.current.element.setAttribute('aria-activedescendant', li.id);
         } else {
           li.classList.remove(this.tribute.current.collection.selectClass);
+          li.setAttribute('aria-selected', 'false');
         }
       }
     }
@@ -1053,10 +1074,10 @@ function () {
         if (!this.isContentEditable(context.element)) {
           coordinates = this.getTextAreaOrInputUnderlinePosition(this.tribute.current.element, info.mentionPosition);
         } else {
-          coordinates = this.getContentEditableCaretPosition(info.mentionPosition);
+          coordinates = this.getContentEditableCaretPosition(info);
         }
 
-        this.tribute.menu.style.cssText = "top: ".concat(coordinates.top, "px;\n                                     left: ").concat(coordinates.left, "px;\n                                     right: ").concat(coordinates.right, "px;\n                                     bottom: ").concat(coordinates.bottom, "px;\n                                     position: absolute;\n                                     display: block;");
+        this.tribute.menu.style.cssText = "top: ".concat(coordinates.top, "px;\n                                     left: ").concat(coordinates.left, "px;\n                                     right: ").concat(coordinates.right, "px;\n                                     bottom: ").concat(coordinates.bottom, "px;\n                                     position: absolute;\n                                     display: block;\n\t\t\t\t\t\t\t\t\t height: ").concat(coordinates.height, "px;");
 
         if (coordinates.left === 'auto') {
           this.tribute.menu.style.left = 'auto';
@@ -1285,10 +1306,22 @@ function () {
 
         if (selectedElem != null) {
           var workingNodeContent = selectedElem.textContent;
+          var startContainer = this.getWindowSelection().getRangeAt(0).startContainer;
           var selectStartOffset = this.getWindowSelection().getRangeAt(0).startOffset;
 
-          if (workingNodeContent && selectStartOffset >= 0) {
-            text = workingNodeContent.substring(0, selectStartOffset);
+          if (startContainer.nodeType == 3) {
+            if (workingNodeContent && selectStartOffset >= 0) {
+              text = workingNodeContent.substring(0, selectStartOffset);
+            }
+          } else if (startContainer.nodeType == 1 && workingNodeContent) {
+            //cursor is not in a text node, so rebuild the appropriate text value
+            workingNodeContent = '';
+
+            for (var x = 0; x < selectStartOffset; x++) {
+              workingNodeContent += startContainer.childNodes[x].textContent;
+            }
+
+            text = workingNodeContent;
           }
         }
       }
@@ -1536,12 +1569,12 @@ function () {
     }
   }, {
     key: "getContentEditableCaretPosition",
-    value: function getContentEditableCaretPosition(selectedNodePosition) {
+    value: function getContentEditableCaretPosition(info) {
       var range;
       var sel = this.getWindowSelection();
       range = this.getDocument().createRange();
-      range.setStart(sel.anchorNode, selectedNodePosition);
-      range.setEnd(sel.anchorNode, selectedNodePosition);
+      range.setStart(sel.anchorNode, sel.anchorNode.nodeType == 3 ? info.mentionPosition : info.mentionSelectedOffset);
+      range.setEnd(sel.anchorNode, sel.anchorNode.nodeType == 3 ? info.mentionPosition : info.mentionSelectedOffset);
       range.collapse(false);
       var rect = range.getBoundingClientRect();
       var doc = this.getDocument().documentElement;
@@ -1564,14 +1597,14 @@ function () {
         coordinates.right = windowWidth - rect.left - windowLeft;
       }
 
-      var parentHeight = this.tribute.menuContainer ? this.tribute.menuContainer.offsetHeight : this.getDocument().body.offsetHeight;
+      var parentHeight = this.tribute.menuContainer ? this.tribute.menuContainer.offsetHeight : this.tribute.current.collection.iframe ? windowHeight : this.getDocument().body.offsetHeight;
       var wasOffscreenBottom = menuIsOffScreen.bottom;
 
       if (menuIsOffScreen.bottom) {
         var parentRect = this.tribute.menuContainer ? this.tribute.menuContainer.getBoundingClientRect() : this.getDocument().body.getBoundingClientRect();
         var scrollStillAvailable = parentHeight - (windowHeight - parentRect.top);
         coordinates.top = 'auto';
-        coordinates.bottom = scrollStillAvailable + (windowHeight - rect.top);
+        coordinates.bottom = scrollStillAvailable + (windowHeight - rect.top - parentRect.top);
       }
 
       menuIsOffScreen = this.isMenuOffScreen(coordinates, menuDimensions, wnd);
@@ -1582,7 +1615,7 @@ function () {
       }
 
       if (menuIsOffScreen.top) {
-        coordinates.top = windowHeight > menuDimensions.height ? windowTop + windowHeight - menuDimensions.height : windowTop;
+        coordinates.top = windowHeight > menuDimensions.height && !wasOffscreenBottom ? windowTop + windowHeight - menuDimensions.height : windowTop;
         if (!wasOffscreenBottom) delete coordinates.bottom;
       }
 
