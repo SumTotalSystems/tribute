@@ -1077,7 +1077,7 @@ function () {
           coordinates = this.getContentEditableCaretPosition(info);
         }
 
-        this.tribute.menu.style.cssText = "top: ".concat(coordinates.top, "px;\n                                     left: ").concat(coordinates.left, "px;\n                                     right: ").concat(coordinates.right, "px;\n                                     bottom: ").concat(coordinates.bottom, "px;\n                                     position: absolute;\n                                     display: block;\n\t\t\t\t\t\t\t\t\t height: ").concat(coordinates.height, "px;");
+        this.tribute.menu.style.cssText = "top: ".concat(coordinates.top, "px;\n                                     left: ").concat(coordinates.left, "px;\n                                     right: ").concat(coordinates.right, "px;\n                                     bottom: ").concat(coordinates.bottom, "px;\n                                     position: absolute;\n                                     display: block;\n                                     height: ").concat(coordinates.height, "px;");
 
         if (coordinates.left === 'auto') {
           this.tribute.menu.style.left = 'auto';
@@ -1450,7 +1450,7 @@ function () {
       var doc = wnd.document.documentElement;
       var windowLeft = (wnd.pageXOffset || doc.scrollLeft) - (doc.clientLeft || 0);
       var windowTop = (wnd.pageYOffset || doc.scrollTop) - (doc.clientTop || 0);
-      var menuTop = typeof coordinates.top === 'number' ? coordinates.top : windowTop + windowHeight - coordinates.bottom - menuDimensions.height;
+      var menuTop = typeof coordinates.top === 'number' ? coordinates.top : windowHeight - coordinates.bottom - menuDimensions.height;
       var menuRight = typeof coordinates.right === 'number' ? coordinates.right : coordinates.left + menuDimensions.width;
       var menuBottom = typeof coordinates.bottom === 'number' ? coordinates.bottom : coordinates.top + menuDimensions.height;
       var menuLeft = typeof coordinates.left === 'number' ? coordinates.left : windowLeft + windowWidth - coordinates.right - menuDimensions.width;
@@ -1544,11 +1544,11 @@ function () {
       }
 
       var parentHeight = this.tribute.menuContainer ? this.tribute.menuContainer.offsetHeight : this.getDocument().body.offsetHeight;
+      var wasOffscreenBottom = menuIsOffScreen.bottom;
 
       if (menuIsOffScreen.bottom) {
         var parentRect = this.tribute.menuContainer ? this.tribute.menuContainer.getBoundingClientRect() : this.getDocument().body.getBoundingClientRect();
-        var scrollStillAvailable = parentHeight - (windowHeight - parentRect.top);
-        coordinates.bottom = scrollStillAvailable + (windowHeight - rect.top - span.offsetTop);
+        coordinates.bottom = windowHeight - rect.top + parentRect.top;
         coordinates.top = 'auto';
       }
 
@@ -1560,8 +1560,8 @@ function () {
       }
 
       if (menuIsOffScreen.top) {
-        coordinates.top = windowHeight > menuDimensions.height ? windowTop + windowHeight - menuDimensions.height : windowTop;
-        delete coordinates.bottom;
+        coordinates.top = windowHeight > menuDimensions.height && !wasOffscreenBottom ? windowTop + windowHeight - menuDimensions.height : windowTop;
+        if (!wasOffscreenBottom) delete coordinates.bottom;
       }
 
       this.getDocument().body.removeChild(div);
@@ -1602,9 +1602,9 @@ function () {
 
       if (menuIsOffScreen.bottom) {
         var parentRect = this.tribute.menuContainer ? this.tribute.menuContainer.getBoundingClientRect() : this.getDocument().body.getBoundingClientRect();
-        var scrollStillAvailable = parentHeight - (windowHeight - parentRect.top);
+        var bodyMarginBottom = this.tribute.menuContainer ? 0 : parseFloat(window.getComputedStyle(this.getDocument().body).getPropertyValue('margin-bottom'));
         coordinates.top = 'auto';
-        coordinates.bottom = scrollStillAvailable + (windowHeight - rect.top - parentRect.top);
+        coordinates.bottom = windowHeight - rect.top + parentRect.top - bodyMarginBottom + 3;
       }
 
       menuIsOffScreen = this.isMenuOffScreen(coordinates, menuDimensions, wnd);

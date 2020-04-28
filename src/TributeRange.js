@@ -18,9 +18,9 @@ class TributeRange {
         }
 
         if (iframe.contentWindow)
-			return iframe.contentWindow.document
-		else
-			return iframe.document
+            return iframe.contentWindow.document
+        else
+            return iframe.document
     }
 
     positionMenuAtCaret(scrollTo) {
@@ -31,7 +31,7 @@ class TributeRange {
 
         if (typeof info !== 'undefined') {
 
-            if(!this.tribute.positionMenu){
+            if (!this.tribute.positionMenu) {
                 this.tribute.menu.style.cssText = `display: block;`
                 return
             }
@@ -50,7 +50,7 @@ class TributeRange {
                                      bottom: ${coordinates.bottom}px;
                                      position: absolute;
                                      display: block;
-									 height: ${coordinates.height}px;`
+                                     height: ${coordinates.height}px;`
 
             if (coordinates.left === 'auto') {
                 this.tribute.menu.style.left = 'auto'
@@ -63,20 +63,20 @@ class TributeRange {
             if (scrollTo) this.scrollIntoView()
 
             window.setTimeout(() => {
-				if (this.tribute.menu) {
-					let menuDimensions = {
-					   width: this.tribute.menu.offsetWidth,
-					   height: this.tribute.menu.offsetHeight
-					}
-					let menuIsOffScreen = this.isMenuOffScreen(coordinates, menuDimensions, this.tribute.current.collection.iframe)
+                if (this.tribute.menu) {
+                    let menuDimensions = {
+                        width: this.tribute.menu.offsetWidth,
+                        height: this.tribute.menu.offsetHeight
+                    }
+                    let menuIsOffScreen = this.isMenuOffScreen(coordinates, menuDimensions, this.tribute.current.collection.iframe)
 
-					let menuIsOffScreenHorizontally = window.innerWidth > menuDimensions.width && (menuIsOffScreen.left || menuIsOffScreen.right)
-					let menuIsOffScreenVertically = window.innerHeight > menuDimensions.height && (menuIsOffScreen.top || menuIsOffScreen.bottom)
-					if (menuIsOffScreenHorizontally || menuIsOffScreenVertically) {
-						this.tribute.menu.style.cssText = 'display: none'
-						this.positionMenuAtCaret(scrollTo)
-					}
-				}
+                    let menuIsOffScreenHorizontally = window.innerWidth > menuDimensions.width && (menuIsOffScreen.left || menuIsOffScreen.right)
+                    let menuIsOffScreenVertically = window.innerHeight > menuDimensions.height && (menuIsOffScreen.top || menuIsOffScreen.bottom)
+                    if (menuIsOffScreenHorizontally || menuIsOffScreenVertically) {
+                        this.tribute.menu.style.cssText = 'display: none'
+                        this.positionMenuAtCaret(scrollTo)
+                    }
+                }
             }, 0)
 
         } else {
@@ -117,7 +117,7 @@ class TributeRange {
 
         try {
             sel.removeAllRanges()
-        } catch (error) {}
+        } catch (error) { }
 
         sel.addRange(range)
         targetElement.focus()
@@ -164,7 +164,7 @@ class TributeRange {
                 }
                 this.pasteHtml(text, info.mentionPosition, endPos)
             }
-            
+
             context.element.dispatchEvent(new CustomEvent('input', { bubbles: true }))
             context.element.dispatchEvent(replaceEvent)
         }
@@ -188,21 +188,21 @@ class TributeRange {
         range.insertNode(frag)
 
         // Preserve the selection
-		if (lastNode) {
-			range = range.cloneRange()
-			range.setStartAfter(lastNode)
-			range.collapse(true)
-			sel.removeAllRanges()
-			sel.addRange(range)
+        if (lastNode) {
+            range = range.cloneRange()
+            range.setStartAfter(lastNode)
+            range.collapse(true)
+            sel.removeAllRanges()
+            sel.addRange(range)
         }
     }
 
     getWindowSelection() {
         if (this.tribute.collection[0].iframe) {
-			if (this.tribute.collection[0].iframe.contentWindow)
-				return this.tribute.collection[0].iframe.contentWindow.getSelection()
-			else
-				return this.tribute.collection[0].iframe.getSelection()
+            if (this.tribute.collection[0].iframe.contentWindow)
+                return this.tribute.collection[0].iframe.contentWindow.getSelection()
+            else
+                return this.tribute.collection[0].iframe.getSelection()
         }
 
         return window.getSelection()
@@ -271,21 +271,21 @@ class TributeRange {
             if (selectedElem != null) {
                 let workingNodeContent = selectedElem.textContent
                 let startContainer = this.getWindowSelection().getRangeAt(0).startContainer
-				let selectStartOffset = this.getWindowSelection().getRangeAt(0).startOffset
-				if (startContainer.nodeType == 3) {
-					if (workingNodeContent && selectStartOffset >= 0) {
-						text = workingNodeContent.substring(0, selectStartOffset)
-					}
-				}
-				else if (startContainer.nodeType == 1 && workingNodeContent) {
-					//cursor is not in a text node, so rebuild the appropriate text value
-					workingNodeContent = ''
-					for (var x=0; x<selectStartOffset; x++) {
-						workingNodeContent += startContainer.childNodes[x].textContent
-					}
+                let selectStartOffset = this.getWindowSelection().getRangeAt(0).startOffset
+                if (startContainer.nodeType == 3) {
+                    if (workingNodeContent && selectStartOffset >= 0) {
+                        text = workingNodeContent.substring(0, selectStartOffset)
+                    }
+                }
+                else if (startContainer.nodeType == 1 && workingNodeContent) {
+                    //cursor is not in a text node, so rebuild the appropriate text value
+                    workingNodeContent = ''
+                    for (var x = 0; x < selectStartOffset; x++) {
+                        workingNodeContent += startContainer.childNodes[x].textContent
+                    }
 
-					text = workingNodeContent
-				}
+                    text = workingNodeContent
+                }
             }
         }
 
@@ -388,7 +388,7 @@ class TributeRange {
         }
     }
 
-    lastIndexWithLeadingSpace (str, trigger) {
+    lastIndexWithLeadingSpace(str, trigger) {
         let reversedStr = str.split('').reverse().join('')
         let index = -1
 
@@ -398,10 +398,10 @@ class TributeRange {
 
             let match = true
             for (let triggerIdx = trigger.length - 1; triggerIdx >= 0; triggerIdx--) {
-              if (trigger[triggerIdx] !== reversedStr[cidx-triggerIdx]) {
-                match = false
-                break
-              }
+                if (trigger[triggerIdx] !== reversedStr[cidx - triggerIdx]) {
+                    match = false
+                    break
+                }
             }
 
             if (match && (firstChar || leadingSpace)) {
@@ -419,13 +419,13 @@ class TributeRange {
 
     isMenuOffScreen(coordinates, menuDimensions, iframe) {
         let wnd = iframe || window
-		let windowWidth = wnd.innerWidth
+        let windowWidth = wnd.innerWidth
         let windowHeight = wnd.innerHeight
         let doc = wnd.document.documentElement
         let windowLeft = (wnd.pageXOffset || doc.scrollLeft) - (doc.clientLeft || 0)
         let windowTop = (wnd.pageYOffset || doc.scrollTop) - (doc.clientTop || 0)
 
-        let menuTop = typeof coordinates.top === 'number' ? coordinates.top : windowTop + windowHeight - coordinates.bottom - menuDimensions.height
+        let menuTop = typeof coordinates.top === 'number' ? coordinates.top : windowHeight - coordinates.bottom - menuDimensions.height
         let menuRight = typeof coordinates.right === 'number' ? coordinates.right : coordinates.left + menuDimensions.width
         let menuBottom = typeof coordinates.bottom === 'number' ? coordinates.bottom : coordinates.top + menuDimensions.height
         let menuLeft = typeof coordinates.left === 'number' ? coordinates.left : windowLeft + windowWidth - coordinates.right - menuDimensions.width
@@ -452,12 +452,12 @@ class TributeRange {
                                  position: fixed;
                                  display: block;
                                  visibility; hidden;`
-       dimensions.width = this.tribute.menu.offsetWidth
-       dimensions.height = this.tribute.menu.offsetHeight
+        dimensions.width = this.tribute.menu.offsetWidth
+        dimensions.height = this.tribute.menu.offsetHeight
 
-       this.tribute.menu.style.cssText = `display: none;`
+        this.tribute.menu.style.cssText = `display: none;`
 
-       return dimensions
+        return dimensions
     }
 
     getTextAreaOrInputUnderlinePosition(element, position, flipped) {
@@ -520,8 +520,8 @@ class TributeRange {
         let top = 0;
         let left = 0;
         if (this.menuContainerIsBody) {
-          top = rect.top;
-          left = rect.left;
+            top = rect.top;
+            left = rect.left;
         }
 
         let coordinates = {
@@ -544,13 +544,14 @@ class TributeRange {
             ? this.tribute.menuContainer.offsetHeight
             : this.getDocument().body.offsetHeight
 
+        let wasOffscreenBottom = menuIsOffScreen.bottom
+
         if (menuIsOffScreen.bottom) {
             let parentRect = this.tribute.menuContainer
                 ? this.tribute.menuContainer.getBoundingClientRect()
                 : this.getDocument().body.getBoundingClientRect()
-            let scrollStillAvailable = parentHeight - (windowHeight - parentRect.top)
 
-            coordinates.bottom = scrollStillAvailable + (windowHeight - rect.top - span.offsetTop)
+            coordinates.bottom = windowHeight - rect.top + parentRect.top
             coordinates.top = 'auto'
         }
 
@@ -561,11 +562,14 @@ class TributeRange {
                 : windowLeft
             delete coordinates.right
         }
+
         if (menuIsOffScreen.top) {
-            coordinates.top = windowHeight > menuDimensions.height
+            coordinates.top = (windowHeight > menuDimensions.height && !wasOffscreenBottom)
                 ? windowTop + windowHeight - menuDimensions.height
                 : windowTop
-            delete coordinates.bottom
+
+            if (!wasOffscreenBottom)
+                delete coordinates.bottom
         }
 
         this.getDocument().body.removeChild(div)
@@ -583,10 +587,10 @@ class TributeRange {
         range.collapse(false)
 
         let rect = range.getBoundingClientRect()
-		let doc = this.getDocument().documentElement
-		let wnd = this.tribute.current.collection.iframe || window
-		let windowLeft = (wnd.pageXOffset || doc.scrollLeft) - (doc.clientLeft || 0)
-		let windowTop = (wnd.pageYOffset || doc.scrollTop) - (doc.clientTop || 0)
+        let doc = this.getDocument().documentElement
+        let wnd = this.tribute.current.collection.iframe || window
+        let windowLeft = (wnd.pageXOffset || doc.scrollLeft) - (doc.clientLeft || 0)
+        let windowTop = (wnd.pageYOffset || doc.scrollTop) - (doc.clientTop || 0)
 
         let left = rect.left
         let top = rect.top
@@ -611,30 +615,33 @@ class TributeRange {
             : (this.tribute.current.collection.iframe ? windowHeight : this.getDocument().body.offsetHeight)
 
         let wasOffscreenBottom = menuIsOffScreen.bottom
-		
-		if (menuIsOffScreen.bottom) {
+
+        if (menuIsOffScreen.bottom) {
             let parentRect = this.tribute.menuContainer
                 ? this.tribute.menuContainer.getBoundingClientRect()
                 : this.getDocument().body.getBoundingClientRect()
-            let scrollStillAvailable = parentHeight - (windowHeight - parentRect.top)
+            let bodyMarginBottom = this.tribute.menuContainer ? 0 : parseFloat(window.getComputedStyle(this.getDocument().body).getPropertyValue('margin-bottom'));
 
             coordinates.top = 'auto'
-            coordinates.bottom = scrollStillAvailable + (windowHeight - rect.top - parentRect.top)
+            coordinates.bottom = windowHeight - rect.top + parentRect.top - bodyMarginBottom + 3
         }
 
         menuIsOffScreen = this.isMenuOffScreen(coordinates, menuDimensions, wnd)
+
         if (menuIsOffScreen.left) {
             coordinates.left = windowWidth > menuDimensions.width
                 ? windowLeft + windowWidth - menuDimensions.width
                 : windowLeft
             delete coordinates.right
         }
+
         if (menuIsOffScreen.top) {
             coordinates.top = (windowHeight > menuDimensions.height && !wasOffscreenBottom)
                 ? windowTop + windowHeight - menuDimensions.height
                 : windowTop
+
             if (!wasOffscreenBottom)
-				delete coordinates.bottom
+                delete coordinates.bottom
         }
 
         if (!this.menuContainerIsBody) {
@@ -686,6 +693,5 @@ class TributeRange {
         }
     }
 }
-
 
 export default TributeRange;
