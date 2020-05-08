@@ -218,7 +218,7 @@ function () {
       this.events.bind(el);
       el.setAttribute('data-tribute', true);
       el.setAttribute('aria-autocomplete', this.autocompleteMode ? 'inline' : 'list');
-      el.setAttribute('aria-owns', 'tributeResults');
+      el.setAttribute('aria-owns', el.id + 'tributeResults');
     }
   }, {
     key: "ensureEditable",
@@ -243,8 +243,8 @@ function () {
       wrapper.style.display = 'none';
       ul.setAttribute('role', 'listbox');
       if (this.current.collection.menuLabel) ul.setAttribute('aria-label', this.current.collection.menuLabel);
-      ul.setAttribute('aria-activedescendant', '');
-      ul.id = 'tributeResults';
+      this.current.element.setAttribute('aria-activedescendant', '');
+      ul.id = this.current.element.id + 'tributeResults';
 
       if (this.menuContainer) {
         return this.menuContainer.appendChild(wrapper);
@@ -350,6 +350,8 @@ function () {
         });
         ul.appendChild(fragment);
 
+        _this2.current.element.setAttribute('aria-activedescendant', '');
+
         _this2.events.setActiveLi(_this2.menuSelected);
 
         var matchEvent = new CustomEvent('tribute-match', {
@@ -438,6 +440,16 @@ function () {
   }, {
     key: "hideMenu",
     value: function hideMenu() {
+      if (this.menu) {
+        this.menu.style.cssText = "position:absolute;\n                                       left:-1000px;\n                                       top:auto;\n                                       height:1px;\n                                       width:1px;\n                                       overflow:hidden;";
+        this.isActive = false;
+        this.menuSelected = 0;
+        this.current = {};
+      }
+    }
+  }, {
+    key: "removeMenu",
+    value: function removeMenu() {
       if (this.menu) {
         this.menuEvents.unbind(this.menu);
         if (this.menu.parentNode) this.menu.parentNode.removeChild(this.menu);
@@ -593,9 +605,11 @@ function () {
       element.boundKeydown = this.keydown.bind(element, this);
       element.boundKeyup = this.keyup.bind(element, this);
       element.boundInput = this.input.bind(element, this);
+      element.boundBlur = this.blur.bind(element, this);
       element.addEventListener('keydown', element.boundKeydown, false);
       element.addEventListener('keyup', element.boundKeyup, false);
       element.addEventListener('input', element.boundInput, false);
+      element.addEventListener('blur', element.boundBlur, false);
     }
   }, {
     key: "unbind",
@@ -603,9 +617,11 @@ function () {
       element.removeEventListener('keydown', element.boundKeydown, false);
       element.removeEventListener('keyup', element.boundKeyup, false);
       element.removeEventListener('input', element.boundInput, false);
+      element.removeEventListener('blur', element.boundBlur, false);
       delete element.boundKeydown;
       delete element.boundKeyup;
       delete element.boundInput;
+      delete element.boundBlur;
     }
   }, {
     key: "keydown",
@@ -615,6 +631,7 @@ function () {
         instance.tribute.hideMenu();
       }
 
+      if (event.keyCode === 9) return;
       var element = this;
       instance.commandEvent = false;
       TributeEvents.keys().forEach(function (o) {
@@ -665,7 +682,7 @@ function () {
       }
 
       instance.updateSelection(this);
-      if (event.keyCode === 27) return;
+      if (event.keyCode === 27 || event.keyCode === 9) return;
 
       if (!instance.tribute.allowSpaces && instance.tribute.hasTrailingSpace) {
         instance.tribute.hasTrailingSpace = false;
@@ -770,10 +787,6 @@ function () {
 
             _this.tribute.hideMenu();
           }
-        },
-        tab: function tab(e, el) {
-          // choose first match
-          _this.callbacks().enter(e, el);
         },
         space: function space(e, el) {
           if (_this.tribute.isActive) {
@@ -884,13 +897,15 @@ function () {
 
       return height;
     }
+  }, {
+    key: "blur",
+    value: function blur(instance, event) {
+      instance.tribute.removeMenu();
+    }
   }], [{
     key: "keys",
     value: function keys() {
       return [{
-        key: 9,
-        value: 'TAB'
-      }, {
         key: 8,
         value: 'DELETE'
       }, {
@@ -1095,7 +1110,7 @@ function () {
               height: _this.tribute.menu.offsetHeight
             };
 
-            var menuIsOffScreen = _this.isMenuOffScreen(coordinates, menuDimensions, _this.tribute.current.collection.iframe);
+            var menuIsOffScreen = _this.isMenuOffScreen(coordinates, menuDimensions, _this.tribute.current.collection ? _this.tribute.current.collection.iframe : window);
 
             var menuIsOffScreenHorizontally = window.innerWidth > menuDimensions.width && (menuIsOffScreen.left || menuIsOffScreen.right);
             var menuIsOffScreenVertically = window.innerHeight > menuDimensions.height && (menuIsOffScreen.top || menuIsOffScreen.bottom);

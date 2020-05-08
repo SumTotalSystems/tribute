@@ -238,8 +238,8 @@ describe('Tribute autocomplete mode cases', function () {
       }
 
       fillIn(input, ' none');
-      let popupListWrapper = document.querySelector('.tribute-container');
-      expect(popupListWrapper).toBeNull();
+      let containerDiv = document.getElementsByClassName("tribute-container")[0];
+      expect(containerDiv.style.left).toEqual('-1000px');
 
       detachTribute(tribute, input.id);
     });
@@ -371,8 +371,8 @@ describe('Tribute NoMatchTemplate cases', function () {
     let tribute = attachTribute(collectionObject, input.id);
     fillIn(input, '@random-text');
 
-    let popupListWrapper = document.querySelector('.tribute-container');
-    expect(popupListWrapper).toBeNull();
+    let containerDiv = document.getElementsByClassName("tribute-container")[0];
+    expect(containerDiv.style.left).toEqual('-1000px');
 
     detachTribute(tribute, input.id);
   });
@@ -394,8 +394,8 @@ describe('Tribute NoMatchTemplate cases', function () {
     let tribute = attachTribute(collectionObject, input.id);
     fillIn(input, '@random-text');
 
-    let popupListWrapper = document.querySelector('.tribute-container');
-    expect(popupListWrapper).toBeNull();
+    let containerDiv = document.getElementsByClassName("tribute-container")[0];
+    expect(containerDiv.style.left).toEqual('-1000px');
 
     detachTribute(tribute, input.id);
   });

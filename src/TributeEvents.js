@@ -6,9 +6,6 @@ class TributeEvents {
 
     static keys() {
         return [{
-            key: 9,
-            value: 'TAB'
-        }, {
             key: 8,
             value: 'DELETE'
         }, {
@@ -33,6 +30,7 @@ class TributeEvents {
         element.boundKeydown = this.keydown.bind(element, this);
         element.boundKeyup = this.keyup.bind(element, this);
         element.boundInput = this.input.bind(element, this);
+        element.boundBlur = this.blur.bind(element, this);
 
         element.addEventListener('keydown',
             element.boundKeydown, false)
@@ -40,6 +38,8 @@ class TributeEvents {
             element.boundKeyup, false)
         element.addEventListener('input',
             element.boundInput, false)
+        element.addEventListener('blur',
+            element.boundBlur, false)
     }
 
     unbind(element) {
@@ -49,10 +49,13 @@ class TributeEvents {
             element.boundKeyup, false)
         element.removeEventListener('input',
             element.boundInput, false)
+        element.removeEventListener('blur',
+            element.boundBlur, false)
 
         delete element.boundKeydown
         delete element.boundKeyup
         delete element.boundInput
+        delete element.boundBlur
     }
 
     keydown(instance, event) {
@@ -60,6 +63,8 @@ class TributeEvents {
             instance.tribute.isActive = false
             instance.tribute.hideMenu()
         }
+
+        if (event.keyCode === 9) return
 
         let element = this
         instance.commandEvent = false
@@ -105,7 +110,7 @@ class TributeEvents {
         }
         instance.updateSelection(this)
 
-        if (event.keyCode === 27) return
+        if (event.keyCode === 27 || event.keyCode === 9) return
 
         if (!instance.tribute.allowSpaces && instance.tribute.hasTrailingSpace) {
             instance.tribute.hasTrailingSpace = false;
@@ -212,10 +217,6 @@ class TributeEvents {
                     this.tribute.hideMenu()
                 }
             },
-            tab: (e, el) => {
-                // choose first match
-                this.callbacks().enter(e, el)
-            },
             space: (e, el) => {
                 if (this.tribute.isActive) {
                     if (this.tribute.spaceSelectsMatch) {
@@ -318,6 +319,9 @@ class TributeEvents {
       return height
     }
 
+    blur(instance, event) {
+        instance.tribute.removeMenu()
+    }
 }
 
 export default TributeEvents;

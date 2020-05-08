@@ -189,7 +189,7 @@ class Tribute {
         this.events.bind(el)
         el.setAttribute('data-tribute', true)
         el.setAttribute('aria-autocomplete', this.autocompleteMode ? 'inline' : 'list')
-        el.setAttribute('aria-owns', 'tributeResults')
+        el.setAttribute('aria-owns', el.id + 'tributeResults')
     }
 
     ensureEditable(element) {
@@ -213,9 +213,9 @@ class Tribute {
         ul.setAttribute('role','listbox')
         if (this.current.collection.menuLabel)
             ul.setAttribute('aria-label', this.current.collection.menuLabel)
-        ul.setAttribute('aria-activedescendant','')
+        this.current.element.setAttribute('aria-activedescendant','')
 
-        ul.id = 'tributeResults'
+        ul.id = this.current.element.id + 'tributeResults'
 
         if (this.menuContainer) {
             return this.menuContainer.appendChild(wrapper)
@@ -310,6 +310,7 @@ class Tribute {
             })
             ul.appendChild(fragment)
 
+            this.current.element.setAttribute('aria-activedescendant','')
             this.events.setActiveLi(this.menuSelected)
 
             let matchEvent = new CustomEvent('tribute-match', { detail: this.menu })
@@ -397,6 +398,20 @@ class Tribute {
     }
 
     hideMenu() {
+        if (this.menu) {
+            this.menu.style.cssText = `position:absolute;
+                                       left:-1000px;
+                                       top:auto;
+                                       height:1px;
+                                       width:1px;
+                                       overflow:hidden;`
+            this.isActive = false
+            this.menuSelected = 0
+            this.current = {}
+        }
+    }
+
+    removeMenu() {
         if (this.menu) {
             this.menuEvents.unbind(this.menu)
             if (this.menu.parentNode)

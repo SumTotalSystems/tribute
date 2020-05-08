@@ -68,7 +68,7 @@ class TributeRange {
                         width: this.tribute.menu.offsetWidth,
                         height: this.tribute.menu.offsetHeight
                     }
-                    let menuIsOffScreen = this.isMenuOffScreen(coordinates, menuDimensions, this.tribute.current.collection.iframe)
+                    let menuIsOffScreen = this.isMenuOffScreen(coordinates, menuDimensions, this.tribute.current.collection ? this.tribute.current.collection.iframe : window)
 
                     let menuIsOffScreenHorizontally = window.innerWidth > menuDimensions.width && (menuIsOffScreen.left || menuIsOffScreen.right)
                     let menuIsOffScreenVertically = window.innerHeight > menuDimensions.height && (menuIsOffScreen.top || menuIsOffScreen.bottom)
